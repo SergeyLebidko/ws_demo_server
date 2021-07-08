@@ -24,10 +24,8 @@ class GroupEchoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         await self.accept()
-        print('Соединение установлено')
 
     async def receive(self, text_data=None, bytes_data=None):
-        print('Получено сообщение:', text_data)
         await self.channel_layer.group_send(
             'broadcast',
             {
@@ -37,9 +35,7 @@ class GroupEchoConsumer(AsyncWebsocketConsumer):
         )
 
     async def group_message(self, event):
-        print(f'Рассылаю сообщение "{event["message"]}" членам группы')
         await self.send(event['message'])
 
     async def disconnect(self, code):
-        print('Соединение разорвано. Код:', code)
         raise StopConsumer
