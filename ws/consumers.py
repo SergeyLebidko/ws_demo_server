@@ -1,3 +1,5 @@
+import random
+import string
 import asyncio
 from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from channels.exceptions import StopConsumer
@@ -51,9 +53,10 @@ class TimerEchoConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def receive(self, text_data=None, bytes_data=None):
-        for i in range(5):
-            await self.send(text_data=f'echo_{i}')
-            await asyncio.sleep(1)
+        echo_key = random.choice(string.ascii_uppercase) + random.choice('0123456789')
+        for i in range(10):
+            await self.send(text_data=f'echo_{i + 1}_{echo_key}')
+            await asyncio.sleep(0.5)
 
     async def disconnect(self, code):
         raise StopConsumer
