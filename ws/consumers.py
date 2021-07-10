@@ -1,8 +1,12 @@
 import random
 import string
 import asyncio
+import redis
+from django.conf import settings
 from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from channels.exceptions import StopConsumer
+
+redis_connection = redis.Redis(settings.REDIS_HOST, settings.REDIS_PORT)
 
 
 class EchoConsumer(WebsocketConsumer):
