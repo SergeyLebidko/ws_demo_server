@@ -60,3 +60,7 @@ class TimerEchoConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code):
         raise StopConsumer
+
+
+class ChannelEchoConsumer(AsyncWebsocketConsumer):
+    """Потребитель, пересылающий сообщения только указанному адресату"""
