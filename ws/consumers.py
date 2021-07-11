@@ -1,3 +1,4 @@
+import json
 import random
 import string
 import asyncio
@@ -68,3 +69,53 @@ class TimerEchoConsumer(AsyncWebsocketConsumer):
 
 class ChannelEchoConsumer(AsyncWebsocketConsumer):
     """Потребитель, пересылающий сообщения только указанному адресату"""
+
+    def __init__(self):
+        self.title = None
+        AsyncWebsocketConsumer.__init__(self)
+
+    @staticmethod
+    def create_redis_key(title):
+        return f'connection_title:{title}'
+
+    async def connect(self):
+        await self.accept()
+
+    async def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
+
+        # Если от клиента получен его идентификатор - сохраняем его и имя связанного с сокетом канала в redis
+        if data['type'] == 'set_title':
+            self.title = data['title']
+            key = self.create_redis_key(self.title)
+            redis_connection.set(key, self.channel_name)
+
+        # Если от клиента пришло сообщение, то пересылаем его тому, кому оно адресовано
+        if data['type'] == 'message':
+            message = data['message']
+            key = self.create_redis_key(data['recipient'])
+            channel_name = redis_connection.get(key)
+            if not channel_name:
+                return
+
+            channel_name = channel_name.decode('utf-8')
+            await self.channel_layer.send(
+                channel_name,
+                {
+                    'type': 'chat.message',
+                    'message': message,
+                    'sender': self.title
+
+                }
+            )
+
+    async def chat_message(self, event):
+        await self.send(text_data=f'{event["sender"]} >> {event["message"]}')
+
+    async def disconnect(self, code):
+        # При отключении клиента, удаляем его ключ из redis
+        if self.title:
+            key = self.create_redis_key(self.title)
+            redis_connection.delete(key)
+
+        raise StopConsumer
